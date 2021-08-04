@@ -91,7 +91,6 @@ public class WebSocketEventsEndpoint extends AbstractXWikiEndpoint
             if (observationType.contentEquals("addListener")) {
                 Map<String, Object> data = (Map<String, Object>) messageReceived.get("data");
                 webSocketEventsManager.addEvent(data, session);
-                return "Added listener to " + ((Map<String, Object>) data.get("eventType")).get("id");
             }
 
         } catch (JsonProcessingException | ClassNotFoundException | InstantiationException | IllegalAccessException
@@ -99,7 +98,7 @@ public class WebSocketEventsEndpoint extends AbstractXWikiEndpoint
             logger.error("Failed to process the event", e);
         }
 
-        return "Something went wrong";
+        return "";
     }
 
     @Override
