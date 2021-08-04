@@ -30,7 +30,6 @@ import javax.websocket.EndpointConfig;
 import javax.websocket.MessageHandler;
 import javax.websocket.Session;
 
-import org.slf4j.Logger;
 import org.xwiki.bridge.DocumentAccessBridge;
 import org.xwiki.component.annotation.Component;
 import org.xwiki.websocket.AbstractXWikiEndpoint;
@@ -77,6 +76,7 @@ public class WebSocketEventsEndpoint extends AbstractXWikiEndpoint
     /**
      * Handles received messages.
      *
+     * @param session the WebSocket session in which the message was received
      * @param message the received message
      * @return the message to send back
      */
