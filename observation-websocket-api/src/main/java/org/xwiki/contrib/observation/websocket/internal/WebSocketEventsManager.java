@@ -23,7 +23,6 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Parameter;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -203,16 +202,46 @@ public class WebSocketEventsManager
     private void onEvent(Event event, Object source, Object data, Object listenerData, Session session)
         throws JsonProcessingException
     {
-        // Serialize the event and data as a message
-        Map<String, Object> messageObject = new HashMap<>();
-        messageObject.put("event", event);
-        messageObject.put("source", source);
-        messageObject.put("data", data);
-        messageObject.put(EVENTDATA, listenerData);
+        StringBuilder builder = new StringBuilder();
+
+        builder.append('{');
+
         ObjectMapper mapper = new ObjectMapper();
-        String json = mapper.writeValueAsString(messageObject);
+
+        // Serialize Event
+        builder.append("\"event\":");
+        builder.append(mapper.writeValueAsString(event));
+
+        // Serialize source
+        try {
+            builder.append(',');
+            builder.append("\"source\":");
+            builder.append(mapper.writeValueAsString(source));
+        } catch (Exception e) {
+            this.logger.warn("Failed to serialize the source of event [{}]", event.toString(), e);
+        }
+
+        // Serialize data
+        try {
+            builder.append(',');
+            builder.append("\"data\":");
+            builder.append(mapper.writeValueAsString(data));
+        } catch (Exception e) {
+            this.logger.warn("Failed to serialize the date of event [{}]", event.toString(), e);
+
+        }
+
+        // Serialize the listener data
+        builder.append(',');
+        builder.append('"');
+        builder.append(EVENTDATA);
+        builder.append('"');
+        builder.append(':');
+        builder.append(mapper.writeValueAsString(listenerData));
+
+        builder.append('}');
 
         // Send the message
-        session.getAsyncRemote().sendText(json);
+        session.getAsyncRemote().sendText(builder.toString());
     }
 }
