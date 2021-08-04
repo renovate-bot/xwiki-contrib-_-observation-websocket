@@ -53,9 +53,6 @@ public class WebSocketEventsEndpoint extends AbstractXWikiEndpoint
     @Inject
     private WebSocketEventsManager webSocketEventsManager;
 
-    @Inject
-    private Logger logger;
-
     @Override
     public void onOpen(Session session, EndpointConfig config)
     {
