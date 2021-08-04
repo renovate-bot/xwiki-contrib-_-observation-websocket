@@ -22,11 +22,59 @@
 
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
   <modelVersion>4.0.0</modelVersion>
+  <!-- TODO: Replace this by a proper contrib parent -->
   <parent>
-    <groupId>org.xwiki.contrib</groupId>
-    <artifactId>parent-platform</artifactId>
-    <version>13.6</version>
+    <groupId>org.xwiki.platform</groupId>
+    <artifactId>xwiki-platform-core</artifactId>
+    <version>13.7-SNAPSHOT</version>
   </parent>
+
+  <!-- TODO: Remove when using a proper contrib parent -->
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-enforcer-plugin</artifactId>
+        <executions>
+          <!-- Verify that all org.xwiki.commons dependencies have a version specified either as:
+               - ${commons.version}
+               - a value not starting with $ (we want to allow supporting ranges)
+               Also verifies that all org.xwiki.rendering dependencies have a version specified either as:
+               - ${rendering.version}
+               - a value not starting with $ (we want to allow supporting ranges)
+               Also verifies that all org.xwiki.platform dependencies have a version specified either as:
+               - ${platform.version}
+               - a value not starting with $ (we want to allow supporting ranges)
+          -->
+          <execution>
+            <id>check-dependency-version</id>
+            <goals>
+              <goal>enforce</goal>
+            </goals>
+            <configuration>
+              <rules>
+                <validateDependencyVersion implementation="org.xwiki.tool.enforcer.ValidateDependencyVersion">
+                  <versionCheck>
+                    <groupIdPrefix>org.xwiki.commons</groupIdPrefix>
+                    <allowedVersionRegex>\$\{commons.version\}|[^$].*</allowedVersionRegex>
+                  </versionCheck>
+                  <versionCheck>
+                    <groupIdPrefix>org.xwiki.rendering</groupIdPrefix>
+                    <allowedVersionRegex>\$\{rendering.version\}|[^$].*</allowedVersionRegex>
+                  </versionCheck>
+                  <versionCheck>
+                    <groupIdPrefix>org.xwiki.platform</groupIdPrefix>
+                    <allowedVersionRegex>\$\{platform.version\}|[^$].*</allowedVersionRegex>
+                  </versionCheck>
+                </validateDependencyVersion>
+              </rules>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+    </plugins>
+  </build>
+
 
   <groupId>org.xwiki.contrib.observation-websocket</groupId>
   <artifactId>observation-websocket</artifactId>
@@ -36,8 +84,6 @@
   <name>Observation WebSocket</name>
 
   <properties>
-    <commons.version>13.7-SNAPSHOT</commons.version>
-
     <xwiki.release.jira.skip>false</xwiki.release.jira.skip>
     <xwiki.issueManagement.jira.id>OWEBSOCKET</xwiki.issueManagement.jira.id>
   </properties>
