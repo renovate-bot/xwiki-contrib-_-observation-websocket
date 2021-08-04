@@ -47,7 +47,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 @Singleton
 public class WebSocketEventsManager
 {
-    private static final String KEY_SESSION_LISTENERS = "xwiki.observation.listeners";
+    static final String KEY_SESSION_LISTENERS = "xwiki.observation.listeners";
 
     @Inject
     private ObservationManager observation;
@@ -135,10 +135,10 @@ public class WebSocketEventsManager
     public void dispose(Session session)
     {
         // Unregister the listener associated to the session
-        EventListener listener = (EventListener) session.getUserProperties().get(KEY_SESSION_LISTENERS);
+        Map<String, EventListener> listeners = (Map) session.getUserProperties().get(KEY_SESSION_LISTENERS);
 
-        if (listener != null) {
-            this.observation.removeListener(listener.getName());
+        if (listeners != null) {
+            listeners.values().forEach(l -> this.observation.removeListener(l.getName()));
         }
     }
 
