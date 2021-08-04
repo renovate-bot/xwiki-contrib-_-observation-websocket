@@ -41,6 +41,9 @@ import org.xwiki.properties.ConverterManager;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.module.SimpleModule;
+import com.xpn.xwiki.XWikiContext;
+import com.xpn.xwiki.doc.XWikiDocument;
 
 /**
  * @version $Id$
@@ -199,6 +202,20 @@ public class WebSocketEventsManager
         }
     }
 
+    private ObjectMapper createMapper()
+    {
+        ObjectMapper mapper = new ObjectMapper();
+
+        // Provide custom serializers for problematic classes
+        // TODO: find a more generic and/or extensible way to deal with this kind of issues
+        SimpleModule module = new SimpleModule();
+        module.addSerializer(XWikiDocument.class, new XWikiDocumentSerializer());
+        module.addSerializer(XWikiContext.class, new XWikiContextSerializer());
+        mapper.registerModule(module);
+
+        return mapper;
+    }
+
     private void onEvent(Event event, Object source, Object data, Object listenerData, Session session)
         throws JsonProcessingException
     {
@@ -206,7 +223,11 @@ public class WebSocketEventsManager
 
         builder.append('{');
 
-        ObjectMapper mapper = new ObjectMapper();
+        builder.append("\"type\" : \"event\",");
+
+        builder.append("\"data\" : {");
+
+        ObjectMapper mapper = createMapper();
 
         // Serialize Event
         builder.append("\"event\":");
@@ -241,6 +262,7 @@ public class WebSocketEventsManager
         builder.append(':');
         builder.append(mapper.writeValueAsString(listenerData));
 
+        builder.append('}');
         builder.append('}');
 
         // Send the message

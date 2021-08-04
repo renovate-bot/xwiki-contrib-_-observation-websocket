@@ -29,15 +29,24 @@ import javax.websocket.Session;
 import org.junit.jupiter.api.Test;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
+import org.suigeneris.jrcs.rcs.Version;
 import org.xwiki.bridge.event.WikiReadyEvent;
+import org.xwiki.component.manager.ComponentManager;
+import org.xwiki.model.reference.DocumentReference;
 import org.xwiki.observation.EventListener;
 import org.xwiki.observation.ObservationManager;
 import org.xwiki.properties.ConverterManager;
 import org.xwiki.test.junit5.mockito.ComponentTest;
+import org.xwiki.test.junit5.mockito.InjectComponentManager;
 import org.xwiki.test.junit5.mockito.InjectMockComponents;
 import org.xwiki.test.junit5.mockito.MockComponent;
 
+import com.xpn.xwiki.CoreConfiguration;
+import com.xpn.xwiki.XWiki;
 import com.xpn.xwiki.XWikiContext;
+import com.xpn.xwiki.doc.XWikiDocument;
+import com.xpn.xwiki.test.reference.ReferenceComponentList;
+import com.xpn.xwiki.web.Utils;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -54,10 +63,14 @@ import static org.mockito.Mockito.when;
  * @version $Id$
  */
 @ComponentTest
+@ReferenceComponentList
 class WebSocketEventsManagerTest
 {
     @MockComponent
     private ObservationManager observation;
+
+    @MockComponent
+    private CoreConfiguration CoreConfiguration;
 
     @MockComponent
     private ConverterManager converter;
@@ -65,10 +78,15 @@ class WebSocketEventsManagerTest
     @InjectMockComponents
     private WebSocketEventsManager manager;
 
+    @InjectComponentManager
+    private ComponentManager componentManager;
+
     @Test
     void test() throws ClassNotFoundException, InstantiationException, IllegalAccessException, IllegalArgumentException,
         InvocationTargetException, NoSuchMethodException, SecurityException
     {
+        Utils.setComponentManager(this.componentManager);
+
         Session session = mock(Session.class);
         Map<String, Object> userProperties = new HashMap<>();
         when(session.getUserProperties()).thenReturn(userProperties);
@@ -115,8 +133,11 @@ class WebSocketEventsManagerTest
 
         assertEquals(listener.getName(), listenerEntry.getKey());
 
+        XWikiDocument document = new XWikiDocument(new DocumentReference("wiki", "space", "document"));
+        document.setRCSVersion(new Version(42, 43));
         XWikiContext xcontext = new XWikiContext();
-        listener.onEvent(new WikiReadyEvent("wiki1"), "wiki1", xcontext);
+        xcontext.setWiki(new XWiki());
+        listener.onEvent(new WikiReadyEvent("wiki1"), document, xcontext);
 
         this.manager.dispose(session);
 
