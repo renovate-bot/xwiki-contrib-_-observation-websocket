@@ -19,6 +19,7 @@
  */
 package org.xwiki.contrib.observation.websocket.internal;
 
+import java.lang.reflect.InvocationTargetException;
 import java.util.Map;
 
 import javax.inject.Inject;
@@ -29,6 +30,7 @@ import javax.websocket.EndpointConfig;
 import javax.websocket.MessageHandler;
 import javax.websocket.Session;
 
+import org.slf4j.Logger;
 import org.xwiki.bridge.DocumentAccessBridge;
 import org.xwiki.component.annotation.Component;
 import org.xwiki.websocket.AbstractXWikiEndpoint;
@@ -43,6 +45,12 @@ public class WebSocketEventsEndpoint extends AbstractXWikiEndpoint
 {
     @Inject
     private DocumentAccessBridge bridge;
+
+    @Inject
+    private WebSocketEventsManager webSocketEventsManager;
+
+    @Inject
+    private Logger logger;
 
     @Override
     public void onOpen(Session session, EndpointConfig config)
@@ -72,19 +80,35 @@ public class WebSocketEventsEndpoint extends AbstractXWikiEndpoint
      * @return the message to send back
      */
     @SuppressWarnings("unchecked")
-    public String onMessage(String message)
+    public String onMessage(Session session, String message)
     {
         ObjectMapper objectMapper = new ObjectMapper();
         try {
-            Map<String, Object> result = (Map<String, Object>) objectMapper.readValue(message, Object.class);
-            String type = (String) result.get("type");
-            
-            return type;
-        } catch (JsonProcessingException e) {
-            e.printStackTrace();
+            Map<String, Object> messageReceived = (Map<String, Object>) objectMapper.readValue(message, Object.class);
+            String observationType = (String) messageReceived.get("type");
+
+            if (observationType.contentEquals("addListener")) {
+                Map<String, Object> data = (Map<String, Object>) messageReceived.get("data");
+                webSocketEventsManager.addEvent(data, session);
+                return "Added listener to " + ((Map<String, Object>) data.get("eventType")).get("id");
+            }
+
+        } catch (JsonProcessingException | ClassNotFoundException | InstantiationException | IllegalAccessException
+            | IllegalArgumentException | InvocationTargetException | NoSuchMethodException | SecurityException e) {
+            logger.error("Failed to process the event", e);
         }
-        
-        return "To change";
+
+        return "Something went wrong";
     }
 
+    /**
+     * Remove the added listeners.
+     *
+     * @see org.xwiki.websocket.AbstractXWikiEndpoint#close(javax.websocket.Session,
+     *      javax.websocket.CloseReason.CloseCode, java.lang.String)
+     */
+    public void close(Session session, CloseReason.CloseCode closeCode, String reasonPhrase)
+    {
+        webSocketEventsManager.dispose(session);
+    }
 }
