@@ -105,12 +105,7 @@ public class WebSocketEventsEndpoint extends AbstractXWikiEndpoint
         return "Something went wrong";
     }
 
-    /**
-     * Remove the added listeners.
-     *
-     * @see org.xwiki.websocket.AbstractXWikiEndpoint#close(javax.websocket.Session,
-     *      javax.websocket.CloseReason.CloseCode, java.lang.String)
-     */
+    @Override
     public void close(Session session, CloseReason.CloseCode closeCode, String reasonPhrase)
     {
         webSocketEventsManager.dispose(session);
