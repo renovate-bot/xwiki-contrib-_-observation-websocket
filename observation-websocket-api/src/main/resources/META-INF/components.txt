@@ -1,1 +1,2 @@
 org.xwiki.contrib.observation.websocket.internal.WebSocketEventsManager
+org.xwiki.contrib.observation.websocket.internal.WebSocketEventsEndpoint

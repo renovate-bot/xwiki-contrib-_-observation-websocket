@@ -30,7 +30,7 @@
 
   <artifactId>observation-websocket-api</artifactId>
 
-  <name>Observation WebSocket</name>
+  <name>Observation WebSocket API</name>
 
   <properties>
     <xwiki.extension.namespaces>{root}</xwiki.extension.namespaces>
