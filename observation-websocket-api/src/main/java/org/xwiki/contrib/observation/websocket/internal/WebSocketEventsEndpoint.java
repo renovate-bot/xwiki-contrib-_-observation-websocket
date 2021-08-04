@@ -98,7 +98,7 @@ public class WebSocketEventsEndpoint extends AbstractXWikiEndpoint
             logger.error("Failed to process the event", e);
         }
 
-        return "";
+        return null;
     }
 
     @Override
