@@ -90,6 +90,8 @@
 
   <modules>
     <module>observation-websocket-api</module>
+    <module>observation-websocket-demo</module>
+    <module>observation-websocket-webjar</module>
   </modules>
 
   <developers>
