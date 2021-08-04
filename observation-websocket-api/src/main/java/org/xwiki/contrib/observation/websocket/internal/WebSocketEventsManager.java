@@ -19,7 +19,9 @@
  */
 package org.xwiki.contrib.observation.websocket.internal;
 
+import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Parameter;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -36,6 +38,7 @@ import org.xwiki.component.annotation.Component;
 import org.xwiki.observation.EventListener;
 import org.xwiki.observation.ObservationManager;
 import org.xwiki.observation.event.Event;
+import org.xwiki.properties.ConverterManager;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -49,15 +52,20 @@ public class WebSocketEventsManager
 {
     static final String KEY_SESSION_LISTENERS = "xwiki.observation.listeners";
 
+    static final String EVENTDATA = "eventData";
+
     @Inject
     private ObservationManager observation;
+
+    @Inject
+    private ConverterManager converter;
 
     @Inject
     private Logger logger;
 
     private final AtomicLong idCounter = new AtomicLong();
 
-    class WebSocketEventListener implements EventListener
+    final class WebSocketEventListener implements EventListener
     {
         private final String name;
 
@@ -100,6 +108,17 @@ public class WebSocketEventsManager
         }
     }
 
+    /**
+     * @param message the addEvent message received from the client
+     * @param session the WebSocket sessions
+     * @throws ClassNotFoundException when failing to resolve the event
+     * @throws InstantiationException when failing to resolve the event
+     * @throws IllegalAccessException when failing to resolve the event
+     * @throws IllegalArgumentException when failing to resolve the event
+     * @throws InvocationTargetException when failing to resolve the event
+     * @throws NoSuchMethodException when failing to resolve the event
+     * @throws SecurityException when failing to resolve the event
+     */
     public void addEvent(Map<String, Object> message, Session session)
         throws ClassNotFoundException, InstantiationException, IllegalAccessException, IllegalArgumentException,
         InvocationTargetException, NoSuchMethodException, SecurityException
@@ -108,11 +127,24 @@ public class WebSocketEventsManager
         Map<String, Object> eventType = (Map) message.get("eventType");
         Class<?> eventClass =
             Class.forName((String) eventType.get("id"), true, Thread.currentThread().getContextClassLoader());
-        // TODO: add support for event parameters
-        Event event = (Event) eventClass.getConstructor().newInstance();
+        Map<String, Object> params = (Map) eventType.get("params");
+        Event event = null;
+        for (Constructor constructor : eventClass.getConstructors()) {
+            if (constructor.getParameterCount() == params.size()) {
+                Object[] parameters = converterParameters(constructor, params);
+
+                if (parameters != null) {
+                    event = (Event) constructor.newInstance(parameters);
+                }
+            }
+        }
+
+        if (event == null) {
+            throw new NoSuchMethodException("No constructor could be found for parameters " + params);
+        }
 
         // Get the custom date
-        Object listenerData = message.get("eventData");
+        Object listenerData = message.get(EVENTDATA);
 
         // Create the listener
         WebSocketEventListener listener = new WebSocketEventListener(event, listenerData, session);
@@ -132,6 +164,32 @@ public class WebSocketEventsManager
         listeners.put(listener.getName(), listener);
     }
 
+    private Object[] converterParameters(Constructor constructor, Map<String, Object> params)
+    {
+        Parameter[] constructorParameters = constructor.getParameters();
+
+        Object[] parameters = new Object[constructorParameters.length];
+
+        for (int i = 0; i < constructorParameters.length; ++i) {
+            Parameter constructorParameter = constructorParameters[i];
+            String name = constructorParameter.getName();
+
+            // Return null if the provided parameters names are not the expected ones
+            if (!params.containsKey(name)) {
+                return null;
+            }
+
+            Object value = params.get(name);
+
+            parameters[i] = this.converter.convert(constructorParameter.getParameterizedType(), value);
+        }
+
+        return parameters;
+    }
+
+    /**
+     * @param session release any resource associated with this sessions
+     */
     public void dispose(Session session)
     {
         // Unregister the listener associated to the session
@@ -150,7 +208,7 @@ public class WebSocketEventsManager
         messageObject.put("event", event);
         messageObject.put("source", source);
         messageObject.put("data", data);
-        messageObject.put("eventData", listenerData);
+        messageObject.put(EVENTDATA, listenerData);
         ObjectMapper mapper = new ObjectMapper();
         String json = mapper.writeValueAsString(messageObject);
 

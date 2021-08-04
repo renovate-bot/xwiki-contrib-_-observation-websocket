@@ -38,6 +38,10 @@ import org.xwiki.websocket.AbstractXWikiEndpoint;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+/**
+ * 
+ * @version $Id$
+ */
 @Component
 @Named("observation")
 @Singleton

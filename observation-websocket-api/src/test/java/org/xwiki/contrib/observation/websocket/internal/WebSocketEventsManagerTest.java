@@ -23,6 +23,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.util.HashMap;
 import java.util.Map;
 
+import javax.websocket.RemoteEndpoint;
 import javax.websocket.Session;
 
 import org.junit.jupiter.api.Test;
@@ -31,12 +32,12 @@ import org.mockito.stubbing.Answer;
 import org.xwiki.bridge.event.WikiReadyEvent;
 import org.xwiki.observation.EventListener;
 import org.xwiki.observation.ObservationManager;
+import org.xwiki.properties.ConverterManager;
 import org.xwiki.test.junit5.mockito.ComponentTest;
 import org.xwiki.test.junit5.mockito.InjectMockComponents;
 import org.xwiki.test.junit5.mockito.MockComponent;
 
-import liquibase.pro.packaged.k;
-import liquibase.pro.packaged.v;
+import com.xpn.xwiki.XWikiContext;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -58,24 +59,32 @@ class WebSocketEventsManagerTest
     @MockComponent
     private ObservationManager observation;
 
+    @MockComponent
+    private ConverterManager converter;
+
     @InjectMockComponents
     private WebSocketEventsManager manager;
 
     @Test
-    void test() throws ClassNotFoundException, InstantiationException, IllegalAccessException,
-        IllegalArgumentException, InvocationTargetException, NoSuchMethodException, SecurityException
+    void test() throws ClassNotFoundException, InstantiationException, IllegalAccessException, IllegalArgumentException,
+        InvocationTargetException, NoSuchMethodException, SecurityException
     {
         Session session = mock(Session.class);
         Map<String, Object> userProperties = new HashMap<>();
         when(session.getUserProperties()).thenReturn(userProperties);
-        
+        RemoteEndpoint.Async async = mock(RemoteEndpoint.Async.class);
+        when(session.getAsyncRemote()).thenReturn(async);
+
+        when(this.converter.convert(String.class, "wiki1")).thenReturn("wiki1");
+
         Map<String, Object> message = new HashMap<>();
+        message.put("eventData", "custom data");
         Map<String, Object> eventType = new HashMap<>();
         eventType.put("id", WikiReadyEvent.class.getName());
         message.put("eventType", eventType);
         Map<String, Object> params = new HashMap<>();
         params.put("wikiId", "wiki1");
-        message.put("params", params);
+        eventType.put("params", params);
 
         doAnswer(new Answer<Void>()
         {
@@ -86,7 +95,7 @@ class WebSocketEventsManagerTest
 
                 assertEquals("websocket-1", listener.getName());
                 assertSame(WikiReadyEvent.class, listener.getEvents().get(0).getClass());
-                //assertEquals("wiki1", ((WikiReadyEvent)listener.getEvents().get(0)).getWikiId());
+                assertEquals("wiki1", ((WikiReadyEvent) listener.getEvents().get(0)).getWikiId());
 
                 return null;
             }
@@ -102,12 +111,15 @@ class WebSocketEventsManagerTest
 
         Map.Entry<String, EventListener> listenerEntry = listeners.entrySet().iterator().next();
 
-        String listenerName = listenerEntry.getValue().getName();
+        EventListener listener = listenerEntry.getValue();
 
-        assertEquals(listenerName, listenerEntry.getKey());
+        assertEquals(listener.getName(), listenerEntry.getKey());
+
+        XWikiContext xcontext = new XWikiContext();
+        listener.onEvent(new WikiReadyEvent("wiki1"), "wiki1", xcontext);
 
         this.manager.dispose(session);
 
-        verify(this.observation).removeListener(listenerName);
+        verify(this.observation).removeListener(listener.getName());
     }
 }
