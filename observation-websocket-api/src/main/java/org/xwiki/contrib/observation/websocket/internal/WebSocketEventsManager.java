@@ -214,18 +214,20 @@ public class WebSocketEventsManager
 
         // Serialize source
         try {
+            String json = mapper.writeValueAsString(source);
             builder.append(',');
             builder.append("\"source\":");
-            builder.append(mapper.writeValueAsString(source));
+            builder.append(json);
         } catch (Exception e) {
             this.logger.warn("Failed to serialize the source of event [{}]", event.toString(), e);
         }
 
         // Serialize data
         try {
+            String json = mapper.writeValueAsString(data);
             builder.append(',');
             builder.append("\"data\":");
-            builder.append(mapper.writeValueAsString(data));
+            builder.append(json);
         } catch (Exception e) {
             this.logger.warn("Failed to serialize the date of event [{}]", event.toString(), e);
 
