@@ -131,31 +131,68 @@
   }
 });
 
-require(['jquery', 'xwiki-observation'], function($, observation) {
+define('xwiki-timer', [], function() {
+  var timer = function(delay, timeout) {
+    delay = delay || 3000; // 3 seconds
+    timeout = timeout || 60000; // 60 seconds
+    var scheduleTimeout;
+    var lastExecutionTime = new Date().getTime();
+    this.schedule = function(callback) {
+      var callbackWrapper = function() {
+        lastExecutionTime = new Date().getTime();
+        callback();
+      };
+      var now = new Date().getTime();
+      if (now - lastExecutionTime &lt; timeout) {
+        // Schedule the execution with the specified delay.
+        clearTimeout(scheduleTimeout);
+        scheduleTimeout = setTimeout(callbackWrapper, delay);
+      } else {
+        // Execute directly.
+        callbackWrapper();
+      }
+    };
+  };
+
+  return timer;
+});
+
+require(['jquery', 'xwiki-observation', 'xwiki-timer'], function($, observation, Timer) {
   'use strict';
 
-  observation.on({
+  var timer = new Timer();
+
+  observation.on([{
     id: 'org.xwiki.component.event.ComponentDescriptorAddedEvent',
     params: {
       roleType: 'org.xwiki.uiextension.UIExtension'
     }
-  }, (event, source, sourceData, eventData) =&gt; {
+  }, {
+    id: 'org.xwiki.component.event.ComponentDescriptorRemovedEvent',
+    params: {
+      roleType: 'org.xwiki.uiextension.UIExtension'
+    }
+  }], (event, source, sourceData, eventData) =&gt; {
     console.log(`Received event ${event} from ${source} with ${sourceData} and ${eventData}.`);
     // FIXME: Ideally we should filter only the events that match the UIXP ('org.xwiki.platform.panels.Applications')
     // but the ComponentDescriptorAddedEvent event doesn't give us enough information (especially the extension point id).
+    timer.schedule(reloadApplicationPanel);
+  }, {foo: 'bar'});
+
+  var reloadApplicationPanel = function() {
     $('.PanelsApplications .xwikipaneltitle').addClass('loading');
     var url = new XWiki.Document('Applications', 'Panels').getURL('get');
     $('.PanelsApplications .applicationsPanel:first-of-type').load(`${url} .applicationsPanel:first-of-type &gt; li`, function() {
       $('.PanelsApplications .xwikipaneltitle').removeClass('loading');
     });
-  }, {foo: 'bar'});
+  };
 });
 
-require(['jquery', 'xwiki-observation'], function($, observation) {
+require(['jquery', 'xwiki-observation', 'xwiki-timer'], function($, observation, Timer) {
   'use strict';
 
-  var reloadTimeout;
-  var lastLoadTime = new Date().getTime();
+  var timer = new Timer();
+
   observation.on([
     'org.xwiki.bridge.event.DocumentCreatedEvent',
     'org.xwiki.bridge.event.DocumentUpdatedEvent',
@@ -164,17 +201,11 @@ require(['jquery', 'xwiki-observation'], function($, observation) {
   ], (event, source, sourceData) =&gt; {
     console.log(`Received event ${event} from ${source} with ${sourceData}.`);
     var now = new Date().getTime();
-    if (now - lastLoadTime &lt; 60000) {
-      // Schedule a reload in 3 seconds because on a large wiki we might have multiple events occuring in a short ammount of time.
-      clearTimeout(reloadTimeout);
-      reloadTimeout = setTimeout(reload, 3000);
-    } else {
-      // Reload directly.
-      reload();
-    }
+    // Don't reload right away because on a large wiki we might have multiple events occuring in a short ammount of time.
+    timer.schedule(reloadDocumentTree);
   });
-  var reload = function() {
-    lastLoadTime = new Date().getTime();
+
+  var reloadDocumentTree = function() {
     $('.jstree-xwiki').each((index, element) =&gt; $(element).jstree(true).refresh());
   };
 });
