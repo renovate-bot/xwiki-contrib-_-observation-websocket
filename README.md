@@ -6,7 +6,10 @@ Listen to XWiki events from JavaScript. Here's how you can use the API:
 require.config({
   paths: {
     'xwiki-observation': $jsontool.serialize($services.webjars.url(
-      'org.xwiki.contrib.observation-websocket:observation-websocket-webjar', 'observation.js', {'evaluate': true}))
+      'org.xwiki.contrib.observation-websocket:observation-websocket-webjar',
+      'observation.js',
+      {'evaluate': true}
+    ))
   }
 });
 
