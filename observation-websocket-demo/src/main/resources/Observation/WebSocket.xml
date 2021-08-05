@@ -200,7 +200,6 @@ require(['jquery', 'xwiki-observation', 'xwiki-timer'], function($, observation,
     'org.xwiki.bridge.event.DocumentDeletedEvent',
   ], (event, source, sourceData) =&gt; {
     console.log(`Received event ${event} from ${source} with ${sourceData}.`);
-    var now = new Date().getTime();
     // Don't reload right away because on a large wiki we might have multiple events occuring in a short ammount of time.
     timer.schedule(reloadDocumentTree);
   });
