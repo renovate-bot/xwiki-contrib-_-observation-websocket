@@ -45,6 +45,38 @@ require(['xwiki-observation'], function(observation) {
 });
 ```
 
+## Communication Protocol
+
+The following messages are exchanged between the client and the server:
+
+* the client wants to register an event listener
+```json
+{
+  "type": "addListener",
+  "data": {
+    "eventType": {
+      "id": "org.xwiki.component.event.ComponentDescriptorAddedEvent",
+      "params": {
+        "roleType": "org.xwiki.uiextension.UIExtension"
+      }
+    },
+    "eventData": {}
+  }
+}
+```
+* an event was triggered on the server
+```json
+{
+  "type": "event",
+  "data": {
+    "event": {},
+    "source": {},
+    "data": {},
+    "eventData": {}
+  }
+}
+```
+
 ## TODO
 
 * Handle security issues: who's allowed to register event listeners? This is important because events can leak private information from the server.
