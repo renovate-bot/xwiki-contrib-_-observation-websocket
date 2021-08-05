@@ -1,6 +1,17 @@
 # WebSocket Observation
 
-Listen to XWiki events from JavaScript. Here's how you can use the API:
+Listen to XWiki events from JavaScript.
+
+* Project Lead: [Marius Dumitru Florea](http://www.xwiki.org/xwiki/bin/view/XWiki/mflorea)
+* Communication: [Mailing List](http://dev.xwiki.org/xwiki/bin/view/Community/MailingLists), [IRC]( http://dev.xwiki.org/xwiki/bin/view/Community/IRC)
+* [Development Practices](http://dev.xwiki.org)
+* Minimal XWiki version supported: XWiki 13.7RC1
+* License: LGPL 2.1+
+* Continuous Integration Status: [![Build Status](http://ci.xwiki.org/job/XWiki%20Contrib/job/observation-websocket/job/master/badge/icon)](http://ci.xwiki.org/view/Contrib/job/XWiki%20Contrib/job/observation-websocket/job/master/)
+
+## Usage
+
+Here's how you can use the API:
 
 ```javascript
 require.config({
