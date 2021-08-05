@@ -44,3 +44,9 @@ require(['xwiki-observation'], function(observation) {
   }, {custom: 'event data'});
 });
 ```
+
+## TODO
+
+* Handle security issues: who's allowed to register event listeners? This is important because events can leak private information from the server.
+* Implement a ping-pong strategy in order to keep the WebSocket connection alive (Jetty closes the connection after 5 minutes of inactivity for instance, so we're forced to reconnect and re-add the event listeners).
+* Extend the API to support removing an event listener.
